@@ -1,7 +1,7 @@
 @doc raw"""
     MPCRadec{T <: AbstractFloat} 
 
-An optical measurement obtained from a MPC formatted file. See https://minorplanetcenter.net/iau/info/OpticalObs.html
+An optical measurement in MPC format. See https://minorplanetcenter.net/iau/info/OpticalObs.html
 for a detailed description of the format. 
 
 # Fields 
@@ -11,7 +11,7 @@ for a detailed description of the format.
 - `disc_astk::String`: discovery asterisk.
 - `note_1::String`: note 1.
 - `note_2::String`: note 2.
-- `date::TDBEpoch{T}`: days since j2000 epoch.
+- `date::TDBEpoch{T}`: date of observation.
 - `α::T`: right ascension [rad].
 - `δ::T`: declination [rad].
 - `ref::String`: reference. 
@@ -37,27 +37,32 @@ struct MPCRadec{T <: AbstractFloat}
     info_2::String
     obs_code::String
     # Inner constructor 
-    function MPCRadec{T}(
-        number::String, temp_desg::String, disc_astk::String, note_1::String, 
-        note_2::String, date::TDBEpoch{T}, α::T, δ::T, ref::String, mag::String, 
-        band::String, catalog::String, info_2::String, obs_code::String
-    ) where {T <: AbstractFloat}
+    function MPCRadec{T}(number::String, temp_desg::String, disc_astk::String, note_1::String, 
+                         note_2::String, date::TDBEpoch{T}, α::T, δ::T, ref::String, mag::String, 
+                         band::String, catalog::String, info_2::String, obs_code::String) where {T <: AbstractFloat}
         new{T}(number, temp_desg, disc_astk, note_1, note_2, date, α, δ, ref, mag, band, 
                catalog, info_2, obs_code)
     end
 end
 
 # Outer constructor
-function MPCRadec(
-    number::String, temp_desg::String, disc_astk::String, note_1::String, 
-    note_2::String, date::TDBEpoch{T}, α::T, δ::T, ref::String, mag::String, 
-    band::String, catalog::String, info_2::String, obs_code::String
-) where {T <: AbstractFloat} 
+function MPCRadec(number::String, temp_desg::String, disc_astk::String, note_1::String, 
+                  note_2::String, date::TDBEpoch{T}, α::T, δ::T, ref::String, mag::String, 
+                  band::String, catalog::String, info_2::String, obs_code::String) where {T <: AbstractFloat} 
     MPCRadec{T}(number, temp_desg, disc_astk, note_1, note_2, date, α, δ, ref, mag, band,
                 catalog, info_2, obs_code)
 end
 
-# Regular expressions to parse each of MPCRadec's fields
+# Two MPCRadec are equal if ther date, α, δ and observatory code are equal
+function hash(a::MPCRadec, h::UInt)
+    return hash((a.date, a.α, a.δ, a.obs_code), h)
+end
+
+function ==(a::MPCRadec, b::MPCRadec)
+    return hash(a) == hash(b)
+end
+
+# Regular expression to parse an optical measurement in MPC format
 const mpc_line_regex = Regex(join(
     [
         # Number regex (columns 1-5)
@@ -120,11 +125,11 @@ function intndec(x::T) where {T <: AbstractFloat}
 end
 
 @doc raw"""
-    parse_date(year::Int, month::Int, day::Int, utc::T) where {T <: AbstractFloat}
+    tdb(year::Int, month::Int, day::Int, utc::T) where {T <: Real}
 
-Returns the corresponding `TDBEpoch` object. 
+Returns the corresponding `TDBEpoch` object. `utc` is the fraction of days. 
 """
-function parse_date(year::Int, month::Int, day::Int, utc::T) where {T <: AbstractFloat}
+function tdb(year::Int, month::Int, day::Int, utc::T) where {T <: Real}
     # Hour + minutes (in hours)
     hr, min_ = intndec(24 * utc)
     # Minutes + seconds (in minutes)
@@ -136,22 +141,22 @@ function parse_date(year::Int, month::Int, day::Int, utc::T) where {T <: Abstrac
 end
 
 @doc raw"""
-    ra(hrs::Int, min::Int, sec::T) where {T <: AbstractFloat}
+    ra(hrs::Int, min::Int, sec::T) where {T <: Real}
 
 Returns the right ascension in radians. 
 """
-function ra(hrs::Int, min::Int, sec::T) where {T <: AbstractFloat}
-    # Convert hours minutes seconds to degrees
+function ra(hrs::Int, min::Int, sec::T) where {T <: Real}
+    # Convert hours minutes seconds to radians
     return deg2rad((15 * hrs) + (0.25 * min) + (1//240 * sec))
 end
 
 @doc raw"""
-    dec(sgn::String, deg::Int, min::Int, sec::T) where {T <: AbstractFloat}
+    dec(sgn::String, deg::Int, min::Int, sec::T) where {T <: Real}
 
 Returns the declination in radians. 
 """
-function dec(sgn::SubString{String}, deg::Int, min::Int, sec::T) where {T <: AbstractFloat}
-    # Convert degrees minutes seconds to degrees
+function dec(sgn::SubString{String}, deg::Int, min::Int, sec::T) where {T <: Real}
+    # Convert degrees minutes seconds to radians
     if sgn == "+"
         return deg2rad(deg + (min / 60) + (sec / 3600))
     elseif sgn == "-"
@@ -162,10 +167,10 @@ end
 @doc raw"""
     MPCRadec(m::RegexMatch)
 
-Converts `m` to a `MPCRadec` object. 
+Converts `m` to a `MPCRadec` object. `m` must be a match of `TO.mpc_line_regex`.
 """
 function MPCRadec(m::RegexMatch)
-    date = parse_date(
+    date = tdb(
         Meta.parse(m["year"]), 
         Meta.parse(m["month"]), 
         Meta.parse(m["day"]),
@@ -204,7 +209,8 @@ end
 @doc raw"""
     file_to_MPCRadec(file::String)  
 
-Returns a vector of `MPCRadec` objects, each one corresponding to a line in MPC formatted `file`.
+Returns a vector of `MPCRadec` objects, each one corresponding to a match of `TO.mpc_line_regex`
+in `file`.
 """
 function file_to_MPCRadec(file::String)
     # Read lines of mpc formatted file 
@@ -217,6 +223,8 @@ function file_to_MPCRadec(file::String)
     radecs = MPCRadec.(matches)
     # Sort observations by date
     sort!(radecs, by = x -> x.date)
+    # Eliminate repeated observations
+    unique!(radecs)
     
     return radecs
 end
@@ -232,12 +240,15 @@ function text_to_MPCRadec(f::Function, text::String)
     radecs = Vector{MPCRadec}(undef, 0)
     # Iterate over the matches 
     for m in eachmatch(mpc_line_regex, text)
+        # Filter by f
         if f(m)
             push!(radecs, MPCRadec(m))
         end
     end
     # Sort observations by date
     sort!(radecs, by = x -> x.date)
+    # Eliminate repeated observations
+    unique!(radecs)
     
     return radecs
 end
@@ -250,9 +261,17 @@ Returns the days since J2000 epoch.
 j2000_days(obs::MPCRadec) = value(j2000(obs.date))
 
 # Print method for MPCRadec
-# number(α, δ) at TDBEpoch
+# Example: 
+# id: 99942 α: 2.0482180537085553 δ: 0.4716727578016939 t: 2021-05-12T06:29:45.089 TDB obs: F51
 function show(io::IO, m::MPCRadec{T}) where {T <: AbstractFloat} 
-    print(io, m.number, "(", m.α, ", ", m.δ, ") at ", m.date)
+    # If there is no number, use temporary designation
+    if filter(!isspace, m.number) == ""
+        print(io, "id: ", m.temp_desig, " α: ", m.α, " δ: ", m.δ, " t: ", m.date,
+              " obs: ", m.obs_code)
+    else
+        print(io, "id: ", m.number, " α: ", m.α, " δ: ", m.δ, " t: ", m.date,
+              " obs: ", m.obs_code)
+    end
 end
 
 @doc raw"""
@@ -274,21 +293,22 @@ const next_circular_regex = r"<a href=\"(?P<next>.*)\"><img src=\"/iau/figs/RArr
 
 @doc raw"""
     iterate_mpc_circulars(
-        number::Int;
+        f::Function,
         url1::String = "https://minorplanetcenter.net/mpec/K20/K20YA9.html",
-        url2::String = "https://minorplanetcenter.net/mpec/K21/K21JL0.html",
-        max_iter::Int = 1_000
+        url2::String = "https://minorplanetcenter.net/mpec/K21/K21JL0.html";
+        max_iter::Int = 10_000
     )
 
 
 Iterates MPC circulars from `url1` to `url2` and returns the matches of `TO.mpc_line_regex` 
-filtered by f. 
+filtered by f. If the function do not reach `url2` before `max_iter` iterations, it will 
+print a warning and return the matches found so far. 
 """
 function iterate_mpc_circulars(
-    f::Function; 
+    f::Function,
     url1::String = "https://minorplanetcenter.net/mpec/K20/K20YA9.html",
-    url2::String = "https://minorplanetcenter.net/mpec/K21/K21JL0.html",
-    max_iter::Int = 1_000
+    url2::String = "https://minorplanetcenter.net/mpec/K21/K21JL0.html";
+    max_iter::Int = 10_000
 )
 
     # Vector of observations
@@ -299,8 +319,12 @@ function iterate_mpc_circulars(
     # First url 
     u = url1
 
-    while n < max_iter
+    while true 
         n += 1
+        if n > max_iter
+            @warn("$n pages checked before getting to $url2")
+            break 
+        end
         # Raw html text of webpage u 
         text = get_raw_text(u)
         # Observations found in text 
@@ -317,6 +341,83 @@ function iterate_mpc_circulars(
     end
     # Sort observations by date 
     sort!(obs, by = x -> x.date)
+    # Eliminate repeated observations
+    unique!(obs)
 
     return obs
+end
+
+function mpc_date(date::TDBEpoch)
+    
+    year_s = lpad(AstroTime.year(date), 4)
+    month_s = lpad(AstroTime.month(date), 2, "0")
+    day_val = AstroTime.day(date) + AstroTime.fractionofday(date)
+    day_s = @sprintf("%09.6f", day_val)
+
+    date_s = join([
+        year_s,
+        " ",
+        month_s,
+        " ",
+        day_s,
+    ])
+
+    return date_s
+end
+
+function mpc_α(α::T) where {T <: Number}
+    α_deg = rad2deg(α)
+    hrs, hrs_ = intndec(α_deg / 15)
+    hrs_s = lpad(hrs, 2, "0")
+
+    min, min_ = intndec(60 * hrs_)
+    min_s = lpad(min, 2, "0")
+
+    sec = 60 * min_
+    sec_s = @sprintf("%06.3f", sec)
+    
+    α_s = join([
+        hrs_s,
+        " ",
+        min_s,
+        " ",
+        sec_s,
+    ])
+
+    return α_s 
+end
+
+function mpc_line(obs::MPCRadec)
+    
+    date_s = mpc_date(obs.date)
+    α_s = mpc_α(obs.α)
+
+    obs_s = join([
+        obs.number,
+        obs.temp_desig,
+        obs.disc_astk,
+        obs.note_1,
+        obs.note_2,
+        date_s,
+        α_s,
+        #δ::T
+        obs.ref,
+        obs.mag,
+        obs.band,
+        obs.catalog,
+        obs.info_2,
+        obs.obs_code,
+        "\n"
+    ])
+
+    return obs_s
+end
+
+function write_mpc_file(obs::Vector{MPCRadec}, filename::String)
+    open(filename, "w") do file
+        for i in eachindex(obs)
+            line = mpc_line(obs[i])
+            write(file, line)
+        end 
+    end
 end

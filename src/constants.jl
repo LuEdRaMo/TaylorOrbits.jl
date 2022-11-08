@@ -13,3 +13,23 @@ const earthdofs = nbodyind(27, ea)
 const sundofs = nbodyind(27, su)
 # Moon's position and velocity indices
 const moondofs = nbodyind(27, mo)
+
+# Observatories with no position information in MPC list 
+const space_obs = [
+    "245",
+    "247",
+    "249",
+    "250",
+    "258",
+    "270",
+    "C49",
+    "C50",
+    "C51",                          
+    "C52",
+    "C53",
+    "C54",
+    "C55",
+    "C56",
+    "C57",
+    "C59"
+]
