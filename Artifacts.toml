@@ -1,0 +1,71 @@
+[TTmTDBde430]
+git-tree-sha1 = "de3fba2237359dc941a057d492c305afeccba133"
+lazy = true
+
+    [[TTmTDBde430.download]]
+    sha256 = "c599efe597200055c27cec38ddc769f5d3b3e301a481b9dcd8b9640d745508a1"
+    url = "https://raw.githubusercontent.com/PerezHz/jpleph/main/TTmTDBde430.tar.gz"
+
+[a99942]
+git-tree-sha1 = "7cdf1265a22c52329651c4a71a9835d1b90f568e"
+lazy = true
+
+    [[a99942.download]]
+    sha256 = "d1cdcad22c8060e98d7ca116973b64bc65cdb5e62fb045637701b57aa146a434"
+    url = "https://raw.githubusercontent.com/PerezHz/jpleph/main/a99942.tar.gz"
+
+[de430]
+git-tree-sha1 = "db3e3a765712a792a7f4a73634213d53fc0561ec"
+lazy = true
+
+    [[de430.download]]
+    sha256 = "25458f6fc0219be7ff9fbd893a4cd6ed9927316824cb5c4062b642414884790d"
+    url = "https://raw.githubusercontent.com/PerezHz/jpleph/main/de430.tar.gz"
+
+[debias]
+git-tree-sha1 = "cfd0d2615770087d3c564b7f6143f01930ccb45e"
+lazy = true
+
+    [[debias.download]]
+    sha256 = "8b107db9506ec45c8cad78d0981c48693c6e5957912df95f4a3df826c7736227"
+    url = "ftp://ssd.jpl.nasa.gov/pub/ssd/debias/debias.tgz"
+
+[debias_2014]
+git-tree-sha1 = "1b6a82575ac74386b893f8c51361d19d350bd234"
+lazy = true
+
+    [[debias_2014.download]]
+    sha256 = "1d44c6443d08f83c79017afd218c3b4e326c573d84842c88713e4b6c8d6d5b03"
+    url = "ftp://ssd.jpl.nasa.gov/pub/ssd/debias/debias_2014.tgz"
+
+[debias_2018]
+git-tree-sha1 = "2632f42545c2a6284db9624e8e61d01dc80ccb2d"
+lazy = true
+
+    [[debias_2018.download]]
+    sha256 = "cae437bbfd29c1c0969a6f196e4327e246f08e0e89bc4fbbfd20981f3068d843"
+    url = "ftp://ssd.jpl.nasa.gov/pub/ssd/debias/debias_2018.tgz"
+
+[debias_hires2018]
+git-tree-sha1 = "d0dabca0822fbead2d85b6f2db251a038d76e38a"
+lazy = true
+
+    [[debias_hires2018.download]]
+    sha256 = "9ddab569e8d16d015850f4139d38f2fedd10cf5f8e0e984cd1b041c6ce9bfa89"
+    url = "ftp://ssd.jpl.nasa.gov/pub/ssd/debias/debias_hires2018.tgz"
+
+[naif0012]
+git-tree-sha1 = "8fa307fe9da2a63ed0cf9d681540d94a619a0995"
+lazy = true
+
+    [[naif0012.download]]
+    sha256 = "d9b1c3d944f671eca8177e29384accbdb5f4b3fbe4603a4bb2e0bdbf7a900fb4"
+    url = "https://raw.githubusercontent.com/PerezHz/jpleph/main/naif0012.tar.gz"
+
+[ttmtdb_DE430_1995_2030]
+git-tree-sha1 = "9e0c56a8987df7426aad09829332f04b014e6264"
+lazy = true
+
+    [[ttmtdb_DE430_1995_2030.download]]
+    sha256 = "19f2a3136a81755746795466b4d4d01bfd962b5b1f6f877af0377a21126d99e1"
+    url = "https://raw.githubusercontent.com/PerezHz/jpleph/main/ttmtdb_DE430_1995_2030_20221103.tar.gz"

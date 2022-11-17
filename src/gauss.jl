@@ -1,43 +1,49 @@
 @doc raw"""
-    GaussArc{T <: Real}
+    GaussArc{T <: AbstractFloat}
 
 Gauss method of IOD applied to a set of optical observations. 
 
 # Fields 
 
-- `obs::Vector{MPCRadec}`: vector of optical observations. 
+- `obs::Vector{MPCRadec{T}}`: vector of optical observations. 
 - `idx::Int`: index of Gauss method middle observation. 
 - `t::T`: days since J2000 of middle observation. 
 - `r::Vector{T}`: position at `t`. 
 - `v::Vector{T}`: velocity at `t`. 
 """
-struct GaussArc{T <: Real}
-    obs::Vector{MPCRadec}
+struct GaussArc{T <: AbstractFloat}
+    obs::Vector{MPCRadec{T}}
     idx::Int
     t::T
     r::Vector{T}
     v::Vector{T}
     # Inner constructor
-    function GaussArc{T}(obs::Vector{MPCRadec}, idx::Int, t::T, r::Vector{T}, v::Vector{T}) where {T <: Real}
+    function GaussArc{T}(obs::Vector{MPCRadec{T}}, idx::Int, t::T, r::Vector{T}, v::Vector{T}) where {T <: Real}
         new{T}(obs, idx, t, r, v)
     end
 end
 
 # Outer constructor
-function GaussArc(obs::Vector{MPCRadec}, idx::Int, t::T, r::Vector{T}, v::Vector{T}) where {T <: Real}
+function GaussArc(obs::Vector{MPCRadec{T}}, idx::Int, t::T, r::Vector{T}, v::Vector{T}) where {T <: Real}
     GaussArc{T}(obs, idx, t, r, v)
 end
 
-j2000_days(arc::GaussArc) = j2000_days.(arc.obs)
+function show(io::IO, arc::GaussArc{T}) where {T <: AbstractFloat} 
+    print(io, length(arc.obs), " observations from ", arc.obs[1].date, " to ", arc.obs[end].date)
+end
+
+j2000_days(arc::GaussArc{T}) where {T <: AbstractFloat} = j2000_days.(arc.obs)
+
+julian_days(arc::GaussArc{T}) where {T <: AbstractFloat} = julian_days.(arc.obs)
 
 @doc raw"""
     topo_pos(α::T, δ::T) where {T <: Number}
-    topo_pos(obs::MPCRadec)
+    topo_pos(obs::MPCRadec{T}) where {T <: AbstractFloat}
 
 Returns the topocentric unit vector corresponding to an optical observation.
 """
 topo_pos(α::T, δ::T) where {T <: Number} = [cos(δ)*cos(α), cos(δ)*sin(α), sin(δ)]
-topo_pos(obs::MPCRadec) = topo_pos(obs.α, obs.δ)
+topo_pos(obs::MPCRadec{T}) where {T <: AbstractFloat} = topo_pos(obs.α, obs.δ)
 
 @doc raw"""
     sun_pv_bar(t::T, eph::PE.TaylorInterpolant) where {T <: Real}
@@ -73,53 +79,53 @@ end
 
 Returns the geocentric position of the observer at `t` days since J2000.
 """
-function observer_position(t::T, obs::MPCRadec) where {T <: Real} 
+function observer_position(t::T, obs::MPCRadec{S}) where {T <: Real, S <: AbstractFloat} 
     return NEOs.observer_position(obs.obs_code, t*daysec)[1] / au
 end
 
 @doc raw"""
     apophis_r_197(t::T) where {T <: Real}
-    apophis_r_197(obs::MPCRadec)    
-    apophis_r_197(arc::GaussArc)
+    apophis_r_197(obs::MPCRadec{T}) where {T <: AbstractFloat}    
+    apophis_r_197(arc::GaussArc{T}) where {T <: AbstractFloat}
 
 Returns the barycentric position of Apophis in JPL #197 solution at `t` days since J2000.
 """
 apophis_r_197(t::T) where {T <: Real} = NEOs.apophis_pv_197(t*daysec)[1:3] / au
-apophis_r_197(obs::MPCRadec) = apophis_r_197(j2000_days(obs))
-apophis_r_197(arc::GaussArc) = apophis_r_197(arc.obs[arc.idx])
+apophis_r_197(obs::MPCRadec{T}) where {T <: AbstractFloat} = apophis_r_197(j2000_days(obs))
+apophis_r_197(arc::GaussArc{T}) where {T <: AbstractFloat} = apophis_r_197(arc.t)
 
 @doc raw"""
     apophis_r_199(t::T) where {T <: Real}
-    apophis_r_199(obs::MPCRadec)    
-    apophis_r_199(arc::GaussArc)
+    apophis_r_199(obs::MPCRadec{T}) where {T <: AbstractFloat}    
+    apophis_r_199(arc::GaussArc{T}) where {T <: AbstractFloat}
 
 Returns the barycentric position of Apophis in JPL #199 solution at `t` days since J2000.
 """
 apophis_r_199(t::T) where {T <: Real} = NEOs.apophis_pv_199(t*daysec)[1:3] / au
-apophis_r_199(obs::MPCRadec) = apophis_r_199(j2000_days(obs))
-apophis_r_199(arc::GaussArc) = apophis_r_199(arc.obs[arc.idx])
+apophis_r_199(obs::MPCRadec{T}) where {T <: AbstractFloat} = apophis_r_199(j2000_days(obs))
+apophis_r_199(arc::GaussArc{T}) where {T <: AbstractFloat} = apophis_r_199(arc.t)
 
 @doc raw"""
     apophis_v_197(t::T) where {T <: Real}
-    apophis_v_197(obs::MPCRadec)    
-    apophis_v_197(arc::GaussArc)
+    apophis_v_197(obs::MPCRadec{T}) where {T <: AbstractFloat}    
+    apophis_v_197(arc::GaussArc{T}) where {T <: AbstractFloat}
 
 Returns the barycentric velocity of Apophis in JPL #197 solution at `t` days since J2000.
 """
 apophis_v_197(t::T) where {T <: Real} = NEOs.apophis_pv_197(t*daysec)[4:6] / au * daysec
-apophis_v_197(obs::MPCRadec) = apophis_v_197(j2000_days(obs))
-apophis_v_197(arc::GaussArc) = apophis_v_197(arc.obs[arc.idx])
+apophis_v_197(obs::MPCRadec{T}) where {T <: AbstractFloat} = apophis_v_197(j2000_days(obs))
+apophis_v_197(arc::GaussArc{T}) where {T <: AbstractFloat} = apophis_v_197(arc.t)
 
 @doc raw"""
     apophis_v_199(t::T) where {T <: Real}
-    apophis_v_199(obs::MPCRadec)    
-    apophis_v_199(arc::GaussArc)
+    apophis_v_199(obs::MPCRadec{T}) where {T <: AbstractFloat}    
+    apophis_v_199(arc::GaussArc{T}) where {T <: AbstractFloat}
 
 Returns the barycentric velocity of Apophis in JPL #199 solution at `t` days since J2000.
 """
 apophis_v_199(t::T) where {T <: Real} = NEOs.apophis_pv_199(t*daysec)[4:6] / au * daysec
-apophis_v_199(obs::MPCRadec) = apophis_v_199(j2000_days(obs))
-apophis_v_199(arc::GaussArc) = apophis_v_199(arc.obs[arc.idx])
+apophis_v_199(obs::MPCRadec{T}) where {T <: AbstractFloat} = apophis_v_199(j2000_days(obs))
+apophis_v_199(arc::GaussArc{T}) where {T <: AbstractFloat} = apophis_v_199(arc.t)
 
 @doc raw"""
     lagrange(A::T, B::T, E::T, F::T, μ::T) where {T <: Real}
@@ -168,7 +174,7 @@ Returns the index `j` of the element in `arc` that minimizes
 |(arc.obs[end] - arc.obs[j]) - (arc.obs[j] - arc.obs[1])|.
 ```
 """
-function central(arc::Vector{MPCRadec})
+function central(arc::Vector{MPCRadec{T}}) where {T <: AbstractFloat}
     # Array of dates 
     dates = j2000_days.(arc)
     # Difference to first date 
@@ -184,7 +190,7 @@ function central(arc::Vector{MPCRadec})
 end
 
 @doc raw"""
-    gauss(obs::Vector{MPCRadec}, eph::PE.TaylorInterpolant, μ::T = 1.; 
+    gauss(obs::Vector{MPCRadec{T}}, eph::PE.TaylorInterpolant, μ::T = 1.; 
           select_r::Function = select_closer_197, select_mid::Function = central,
           max_iter::Int = 1_000, abstol::T = 1e-8, r_range = (0, 10)) where {T <: AbstractFloat}
 
@@ -201,11 +207,11 @@ Gauss method of IOD.
 - `abstol::T`: absolute tolerance for refinement.
 - `r_range`: range where to look for solutions of the Lagrange equation. 
 """
-function gauss(obs::Vector{MPCRadec}, eph::PE.TaylorInterpolant, μ::T = 1.; 
+function gauss(obs::Vector{MPCRadec{T}}, eph::PE.TaylorInterpolant, μ::T = 1.; 
                select_r::Function = select_closer_197, select_mid::Function = central,
                max_iter::Int = 1_000, abstol::T = 1e-8, r_range = (0, 10)) where {T <: AbstractFloat}
 
-    m = length(obs)
+    m = length(obs)     
     @assert m >= 3 "Gauss method requires at least three observations"
 
     if m == 3
@@ -413,8 +419,4 @@ function gauss(obs::Vector{MPCRadec}, eph::PE.TaylorInterpolant, μ::T = 1.;
         r_2_vec + pv_sun[1:3],
         k_gauss*v_2_vec + pv_sun[4:6]
     )
-end
-
-function show(io::IO, arc::GaussArc{T}) where {T <: AbstractFloat} 
-    print(io, length(arc.obs), " observations from ", arc.obs[1].date, " to ", arc.obs[end].date)
 end
